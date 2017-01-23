@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html ng-app="CarFleet">
+<head>
+    <title>Cadastro de Frota</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/toastr.css">
+    <link rel="stylesheet" href="css/font-awesome/css/font-awesome.min.css">
+    <link rel="icon" href="img/favicon.ico" />
+</head>
+<body>
+    <div class="container" ng-controller="CarFleetController">
+        <nav class="navbar navbar-inverse bg-primary">
+            <a class="navbar-brand" href="https://contaazul.com/" title="ContaAzul">
+                <img class="img-logo" src="img/logo.png" alt="ContaAzul | Logo">
+            </a>
+        </nav>
+        <div class="row my-4">
+            <div class="col-lg-1">
+            </div>
+            <div class="col-lg-2">
+                <!-- Button trigger modal -->
+                <div class="form-group">
+                    <button type="button" class="btn btn-success" data-toggle="modal" ng-click="addCar()" data-target="#car-modal">
+                        Novo Carro
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-3">
+            </div>
+            <div class="col-lg-4">
+                <!-- Search -->
+                <div class="form-group input-group row">
+                    <input type="search" ng-model="query" ng-change="search()" class="form-control" placeholder="Buscar...">
+                    <div class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-1">
+        </div>
+        <div class="row">
+            <div class="col-lg-1">
+            </div>
+            <div class="col-lg-9">
+                <!-- Table -->
+                <table id="car-list" class="table table-striped table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>
+                                <label class="custom-control custom-checkbox">
+                                    <input type="checkbox" ng-click="toggleAll()" ng-model="isAllSelected" class="custom-control-input">
+                                    <span class="custom-control-indicator"></span>
+                                </label>
+                            </th>
+                            <th>Placa</th>
+                            <th>Modelo</th>
+                            <th>Marca</th>
+                            <th>Foto</th>
+                            <th>Combustível</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="car in pagedCars[currentPage]">
+                            <td>
+                                <label class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" ng-model="car.selected" ng-click="optionToggled()">
+                                    <span class="custom-control-indicator"></span>
+                                </label>
+                            </td>
+                            <td>{{ car.placa }}</td>
+                            <td>{{ car.modelo }}</td>
+                            <td>{{ car.marca }}</td>
+                            <td>
+                                <a ng-show="car.imagem != null" target="_blank" ng-href="{{car.imagem}}" ng-init="itemsrc='img/transparent.png'" ng-mouseover="itemsrc= car.imagem"
+                                   ng-mouseleave="itemsrc='img/transparent.png'" title="Imagem">
+                                    Imagem
+                                    <img ng-src="{{itemsrc}}" alt="Imagem" style="zindex: 100; position: absolute; max-width: 250px">
+                                </a>
+                                <em ng-show="car.imagem == null">Sem foto</em>
+                            </td>
+                            <td>{{ car.combustivel }}</td>
+                            <td>{{ car.valor  | number:0 }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6">
+                                <div class="pagination pull-right">
+                                    <ul>
+                                        <li ng-class="{disabled: currentPage == 0}">
+                                            <a href ng-click="prevPage()"><i class="fa fa-angle-double-left" aria-hidden="true"></i></a>
+                                        </li>
+                                        <li ng-repeat="n in range(pagedCars.length)"
+                                            ng-class="{active: n == currentPage}"
+                                            ng-click="setPage()">
+                                            <a href ng-bind="n + 1">1</a>
+                                        </li>
+                                        <li ng-class="{disabled: currentPage == pagedCars.length - 1}">
+                                            <a href ng-click="nextPage()"><i class="fa fa-angle-double-right" aria-hidden="true"></i></a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="col-lg-1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="car-modal" tabindex="-1" role="dialog" aria-labelledby="car-modal" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form name="carForm" novalidate>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Cadastro de Carro</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true"><i class="fa fa-times-circle"></i></span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="container-fluid">
+                                <!-- Placa -->
+                                <div class="form-group row" ng-class="{ 'has-danger': carForm.placa.$invalid }">
+                                    <input type="text" name="placa" class="form-control" mask='@@@-9999' restrict="reject" ng-model="car.placa" placeholder="Placa* ABC-1234" required autofocus>
+                                </div>
+                                <!-- Marca -->
+                                <div class="form-group row" ng-class="{ 'has-danger': carForm.marca.$invalid }">
+                                    <input type="text" name="marca" class="form-control" ng-model="car.marca" maxlength="50" placeholder="Marca*" required>
+                                </div>
+                                <!-- Modelo -->
+                                <div class="form-group row" ng-class="{ 'has-danger': carForm.modelo.$invalid }">
+                                    <input type="text" name="modelo" class="form-control" ng-model="car.modelo" maxlength="50" placeholder="Modelo*" required>
+                                </div>
+                                <!-- Imagem -->
+                                <div class="form-group input-group row">
+                                    <input type="text" name="imagem" class="form-control" ng-model="car.imagem" maxlength="500" placeholder="Url da Foto">
+                                    <div class="input-group-addon">
+                                        <a target="_blank" ng-href="{{car.imagem}}" ng-init="itemsrc='img/transparent.png'" ng-mouseover="itemsrc= car.imagem"
+                                           ng-mouseleave="itemsrc='img/transparent.png'" title="Imagem">
+                                            <i class="fa fa-picture-o" aria-hidden="true"></i>
+                                            <img ng-src="{{itemsrc}}" alt="Imagem" style="zindex: 100; position: absolute; max-width: 250px">
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Combustível -->
+                                <div class="form-group row">
+                                    <select name="combustivel" name="combustível" class="form-control" placeholder="Combustí­vel" ng-model="car.combustivel">
+                                        <option value="Alcool">Alcool</option>
+                                        <option value="Flex">Flex</option>
+                                        <option value="Gasolina">Gasolina</option>
+                                    </select>
+                                </div>
+                                <!-- Valor -->
+                                <div class="form-group row">
+                                    <input type="number" name="valor" class="form-control" ng-model="car.valor" placeholder="Valor" class="input-small">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button class="btn btn-success" ng-disabled="carForm.$invalid" ng-click="saveCar()" data-dismiss="modal">
+                                <span aria-hidden="true"><i class="fa fa-plus-circle mr-sm-2"></i></span>Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/bootstrap.min.js"></script>
+    <script src="lib/angular.min.js"></script>
+    <script src="lib/ngMask.min.js"></script>
+    <script src="lib/toastr.min.js"></script>
+    <script src="lib/tether.min.js"></script>
+    <script src="app/controllers.js"></script>
+</body>
+</html>
